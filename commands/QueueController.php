@@ -7,6 +7,7 @@ use yii\console\ExitCode;
 use app\modules\api\modules\v1\models\ApiClients;
 use app\modules\api\modules\v1\models\ApiPhones;
 use Yii;
+use yii\helpers\Json;
 
 class QueueController extends Controller
 {
@@ -16,17 +17,19 @@ class QueueController extends Controller
         $cache_queue = $cache->get('query_queue');
         $cache->delete('query_queue');
         $requests = explode(';', $cache_queue);
-        foreach ($requests as $request) {
-            try {
-                $clients = \yii\helpers\Json::decode($request,false);
-            } catch (\yii\base\InvalidArgumentException $ex) {
-                return [
-                    'status' => false,
-                    'message' => $ex->getMessage(),
-                ];
-            }
-            $transaction = Yii::$app->db->beginTransaction();
-            try {
+        $transaction = Yii::$app->db->beginTransaction();
+        try {
+            foreach ($requests as $request) {
+                try {
+                    $clients = Json::decode($request,false);
+                } catch (\yii\base\InvalidArgumentException $ex) {
+
+                    echo  Json::encode([
+                        'status' => false,
+                        'message' => $ex->getMessage(),
+                    ]);
+                    continue;
+                }
                 if(is_array($clients)){
                     foreach ($clients as $client) {
                         $this->newClient($client);
@@ -34,10 +37,10 @@ class QueueController extends Controller
                 } elseif (is_object($clients)){
                     $this->newClient($clients);
                 }
-                $transaction->commit();
-            } catch (\Exception $e) {
-                $transaction->rollBack();
             }
+            $transaction->commit();
+        } catch (\Exception $e) {
+            $transaction->rollBack();
         }
         return ExitCode::OK;
     }
