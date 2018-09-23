@@ -16,7 +16,7 @@ class QueueController extends Controller
         $cache = Yii::$app->cache;
         $cache_queue = $cache->get('query_queue');
         $cache->delete('query_queue');
-        $requests = explode(';', $cache_queue);
+        $requests = explode(';', trim($cache_queue,';'));
         $transaction = Yii::$app->db->beginTransaction();
         try {
             foreach ($requests as $request) {
