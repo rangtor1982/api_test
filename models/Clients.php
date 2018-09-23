@@ -58,13 +58,20 @@ class Clients extends \yii\db\ActiveRecord
     {
         return $this->hasMany(Phones::className(), ['client_id' => 'id']);
     }
+    public function clearPhones() {
+        foreach ($this->phones as $phone) {
+            if(is_object($phone)) $phone->delete();
+        }
+    }
+    
+    public function addPhone(Phones $phone) {
+        if(!empty($phone->phone)) $phone->link('client', $this);
+    }
     
     public function setPhones($data = []) {
         $transaction = Yii::$app->db->beginTransaction();
         try {
-            foreach ($data['model']->phones as $phone) {
-                if(is_object($phone)) $phone->delete();
-            }
+            $this->clearPhones();
             $count = count($data['request']['Phones']);
             $phones = [new \app\models\Phones()];
             for($i = 1; $i < $count; $i++) {
@@ -72,7 +79,7 @@ class Clients extends \yii\db\ActiveRecord
             }
             \yii\base\Model::loadMultiple($phones, $data['request']);
             foreach ($phones as $key => $phone) {
-                if(!empty($phone->phone)) $phone->link('client', $data['model']);
+                $this->addPhone($phone);
             }
             $transaction->commit();
         } catch (\Exception $e) {

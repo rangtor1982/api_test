@@ -35,6 +35,7 @@ class ApiClientController extends Controller
             'clients' => $clients,
         ];
     }
+
     public function actionAdd() {
         $request = Yii::$app->request->getRawBody();
         try {
@@ -63,6 +64,18 @@ class ApiClientController extends Controller
             'clients' => $clients,
         ];
     }
+
+    public function actionAddCached() {
+        $request = Yii::$app->request->getRawBody();
+        $cache = Yii::$app->cache;
+        $cache_queue = $cache->get('query_queue');
+        $cache->set('query_queue', ($cache_queue ? $cache_queue.';'.$request : $request));
+        return [
+            'status' => true,
+            'message' => 'queue updated',
+            'queue' => $cache_queue
+        ];
+    }
     
     protected function newClient($client) {
         $new_client = new ApiClients();
@@ -72,7 +85,7 @@ class ApiClientController extends Controller
             foreach ($client->phoneNumbers as $number){
                 $new_phone =new ApiPhones();
                 $new_phone->phone = $number;
-                $new_phone->link('client', $new_client);
+                $new_client->addPhone($new_phone);
             }
         }
     }

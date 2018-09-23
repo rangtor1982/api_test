@@ -147,7 +147,6 @@ class ClientsController extends Controller
      */
     protected function findModel($id)
     {
-        $cache = Yii::$app->cache;
         $model =  Clients::find()
                     ->with('phones')
                     ->where(['id' => $id])
